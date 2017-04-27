@@ -39,11 +39,11 @@ module GraphiteAPI
     def expand_host host
       if host =~ /:\/\//
         uri = URI.parse host
-        [ uri.host, uri.port || default_options[:port] ]
+        [ uri.host, uri.port || default_options[:port], uri.scheme || default_options[:scheme] ]
       else
         host, port = host.split(":")
         port = port.nil? ? default_options[:port] : port.to_i
-        [ host, port]
+        [ host, port ]
       end
     end
 
@@ -58,6 +58,7 @@ module GraphiteAPI
         :prefix => [],
         :interval => 0,
         :slice => 60,
+        :scheme => 'tcp',
         :pid => "/tmp/graphite-middleware.pid"
       }
     end

@@ -22,34 +22,71 @@ module GraphiteAPI
         Array(messages).each { |msg| @connectors.map {|c| c.puts msg} }
       end
     end
-    
-    def initialize host, port
-      @host, @port = host, port
+
+    def initialize host, port, scheme='tcp'
+      @socket = scheme == 'udp' ? UDPSocket.new(host, port) : TCPSocket.new(host, port)
     end
     
     def puts message
       begin
-        Logger.debug [:connector,:puts,[@host, @port].join(":"),message]
-        socket.puts message + "\n"
+        Logger.debug [:connector,:puts,@socket.inspect,message]
+        @socket.puts message + "\n"
       rescue Errno::EPIPE, Errno::EINVAL, Errno::ETIMEDOUT
-        @socket = nil
+        @socket.reopen
       retry
       end
     end
     
     def inspect
-      "#{self.class} #{@host}:#{@port}"
+      "#{self.class} #{@socket.inspect}"
     end
-    
-    protected
-    
-    def socket
-      if @socket.nil? || @socket.closed?
-        Logger.debug [:connector,[@host,@port]]
-        @socket = ::TCPSocket.new @host, @port
+
+    class Socket
+      def initialize host, port
+        @host, @port = host, port
       end
-      @socket
+
+      def inspect
+        "#{self.class} #{@host}:#{@port}"
+      end
+
+      def reopen
+        @socket = nil
+      end
     end
-     
+
+    class UDPSocket < Socket
+      def puts message
+        socket.send message + "\n", 0
+      end
+
+      private
+
+      def socket
+        if @socket.nil? || @socket.closed?
+          Logger.debug [:connector,[@host,@port,'udp']]
+          @socket = ::UDPSocket.new
+          @socket.connect @host, @port
+        end
+        @socket
+      end
+    end
+
+    class TCPSocket < Socket
+      def puts message
+        socket.puts message + "\n"
+      end
+
+      private
+
+      def socket
+        if @socket.nil? || @socket.closed?
+          Logger.debug [:connector,[@host,@port,'tcp']]
+          @socket = ::TCPSocket.new @host, @port
+        end
+        @socket
+      end
+    end
+    
   end
 end

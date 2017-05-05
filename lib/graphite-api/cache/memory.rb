@@ -1,3 +1,5 @@
+require 'zscheduler'
+
 module GraphiteAPI
   module Cache
     class Memory

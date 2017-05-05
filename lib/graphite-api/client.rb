@@ -1,4 +1,5 @@
 require File.expand_path '../utils', __FILE__
+require 'zscheduler'
 
 module GraphiteAPI
   class Client

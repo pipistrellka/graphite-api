@@ -1,5 +1,3 @@
-require 'zscheduler'
-
 module GraphiteAPI
   ROOT = File.expand_path File.dirname __FILE__
 
